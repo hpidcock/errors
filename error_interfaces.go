@@ -1,9 +1,5 @@
 package errors
 
-import (
-	"google.golang.org/grpc/status"
-)
-
 type Wrapper interface {
 	Unwrap() error
 }
@@ -16,6 +12,8 @@ type WithCallers interface {
 	Callers() []uintptr
 }
 
-type WithGRPCStatus interface {
-	GRPCStatus() *status.Status
+type CauserWithCallers interface {
+	error
+	Causer
+	WithCallers
 }

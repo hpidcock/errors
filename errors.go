@@ -22,18 +22,10 @@ var endReturnTraceMarker = _EndReturnTraceMarker()
 func createCauserWithCallers(err error) error {
 	var programCounter [32]uintptr
 	depth := runtime.Callers(3, programCounter[:])
-	if _, ok := err.(WithGRPCStatus); ok {
-		return &grpcCauserWithCallers{
-			causerWithCallers{
-				cause:   err,
-				callers: programCounter[:depth],
-			},
-		}
-	}
-	return &causerWithCallers{
+	return synthesizer(err)(TrackedError{
 		cause:   err,
 		callers: programCounter[:depth],
-	}
+	})
 }
 
 func WithStack(err error) error {
@@ -56,7 +48,7 @@ func Track(err error) error {
 		return nil
 	}
 
-	c, ok := err.(*causerWithCallers)
+	c, ok := err.(*TrackedError)
 	if ok == false {
 		return createCauserWithCallers(err)
 	}
@@ -68,5 +60,5 @@ func Track(err error) error {
 
 	runtime.Callers(2, c.callers[len(c.callers)-1:])
 	c.callers = append(c.callers, endReturnTraceMarker)
-	return c
+	return err
 }
